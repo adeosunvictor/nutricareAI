@@ -48,11 +48,7 @@ Create an account-scoped Cloudflare API token with appropriate Workers AI permis
 
 `RETRIEVAL_MODE=lexical` prioritizes low latency and makes no embedding inference calls. The initial ADIME assessment uses deterministic domain-diverse lexical source selection to cover multiple record sections with one clinical-draft model call followed by two patient-language calls. For chat, `hybrid` submits one batch of the query and top lexical candidates to Cloudflare's BGE-small model for reranking. This is a small bounded per-request index. There is **no persistent vector database** or curated clinical guideline knowledge base in this MVP. Do not describe it as an accredited clinical RAG system.
 
-## Free Vercel deployment
 
-The root `app.py` exports `backend.main.app`; `vercel.json` sets the Python function duration. The static frontend is under `public/`, which Vercel can serve from its CDN. Import this directory as a Vercel project, use the Python-compatible preset / Other framework if prompted, and supply credentials under Environment Variables. Deploy. No paid database is needed for the disposable synthetic demo.
-
-**Limits:** This MVP deliberately limits uploads to 3 MB and 25 patients; Vercel Functions have a [4.5 MB request payload limit](https://vercel.com/docs/functions/limitations). Scanned PDF OCR, Excel formula evaluation, complex document tables, durable uploads, batch jobs and patient data persistence are *not* implemented. Processing/group assessment runs within request and serverless execution limits. Free quotas, timeouts and cold starts still apply. The provided structure is not a production hospital deployment.
 
 ## Files
 
@@ -84,46 +80,4 @@ nutricare-ai/
   README.md             this file
 ```
 
-Copy `.env.example` to `.env`; the real `.env` is **not included** in the ZIP. The backend package marker is kept so the imports work consistently on Vercel and locally.
 
-## Evaluation and testing
-
-```bash
-pip install pytest
-python -m pytest -q
-node --check public/app.js
-```
-
-`/api/metrics` returns only in-memory aggregates: upload/chat/assessment counts, p50/p95 processing time and model token counts if provided. Metrics reset on cold starts and are not shared across instances; no patient text is intentionally logged. `backend/benchmark.py` exposes a reproducible five-question fictional lexical retrieval fixture in the UI and via `/api/evaluation` (see `EVALUATION.md`). `backend/evaluation.py` includes Precision@K, Recall@K, reciprocal rank, citation accuracy, patient-leakage checks, and annotated-case answer relevance / groundedness scores. Clinical correctness, groundedness, faithfulness, model hallucination rates and robustness to novel prompt injection need additional *clinician-reviewed golden datasets* and red-team exercises. The ADIME draft validator checks output structure, length, source-ID existence, exclusion of financial planning, the pending-prescription placeholder and two narrow food safety checks. It cannot establish that a cited passage actually supports a clinical claim or that a nutrition intervention is safe. Passing tests is not a claim of clinical safety.
-
-## What "standard" means here
-
-The draft follows the four-step Nutrition Care Process (NCP) documentation sequence, commonly expressed in ADIME. See the [Academy's NCP overview](https://www.eatrightpro.org/practice/nutrition-care-process/ncp-overview). This is **a structure for professional review**, not a claim of NCP Terminology licensing, guideline integration, regulatory clearance, or validated nutrition care.
-
-The initial draft has no verified professional nutrition diagnosis, clinical nutrition prescription, individualized targets, authorized clinician identity or evidence-based guideline library. Its PES statement is a candidate when adequately supported, otherwise it is left blank. A professional must independently inspect source content, approve appropriate terminology and interventions, and decide on monitoring indicators and follow-up. The source links establish where text came from, **not** that a claim is medically correct.
-
-**Cloudflare's live output has not been tested with your credentials.** If the model fails the expanded schema, the application displays an error instead of fabricating a missing assessment. See `tests/test_care_plan.py` for mocked inference and regression examples.
-
-## Public demo safety boundaries
-
-- Rejects upload without fictional-data confirmation, but attestation alone cannot verify anonymization. Never upload identifiable patients.
-- No login means **no actual access control**. The backend processes only the active patient object submitted for that request, but a determined user could submit any object they possess. It is not a secure multi-tenant implementation.
-- Text in uploaded records remains untrusted; the agent uses predeclared retrieval tools and has no autonomous database write, network browsing or code execution capability. Prompt injection is not perfectly preventable, and the system must never be granted real records until stronger controls are implemented.
-- Generated answers and nutrition drafts are explicitly unverified. A fictional reviewer must inspect/edit/approve each report. The approval is a UI workflow in a public demo, not verifiable professional identity.
-- No validated nutrition/medical guideline library is bundled, and the AI should not make clinical treatment claims from source records alone. Use a qualified professional for real cases.
-
-## Future engineering work
-
-Add identity verification and patient- and tenant-scoped server-side authorization, consent and legal/privacy review, secure storage, async upload jobs, scanned PDF support, de-identification tools, clinically versioned guideline retrieval, evidence provenance at field level, independent safety validation, audit events, distributed rate limiting, and production eval datasets before handling real patient data.
-
-
-## Portfolio release checklist
-
-- [ ] Run `python -m pytest -q` and `node --check public/app.js`.
-- [ ] Configure your existing Cloudflare account and token in your local `.env`; do not commit it.
-- [ ] Manually assess at least two fictional patient records with the real configured model, inspect the cited evidence and all three generated sections, propose and accept/reject a copilot edit, and export/open each PDF. Automated tests mock the provider and cannot confirm live response quality.
-- [ ] Open the Evaluation tab, check the transparent fixture and operational counters. Do not describe fixture retrieval scores as clinical/LLM accuracy.
-- [ ] Confirm the host's free-tier function duration, payload size, model latency, and quotas against the running app; three LLM requests are made per assessment. A 60-second function timeout is not proof that every real assessment will complete.
-- [ ] Add project-level usage protection before sharing a public endpoint broadly. The current in-process rate limiter is not distributed across Vercel instances and cannot reliably cap your provider spending.
-- [ ] Keep the fictional-only upload restriction and professional-review status visible. Do not submit identifiable real patient records.
-- [ ] Select an open-source license before publishing the repository; code being visible is not automatically licensed for reuse.
