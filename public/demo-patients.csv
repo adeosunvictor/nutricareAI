@@ -1,0 +1,4 @@
+patient_id,patient_name,age,sex,height,weight,medical_history,medications,labs,diet,allergies,budget
+DEMO101,Alex Rivera,45,Adult,170 cm,79 kg,No documented medical diagnosis in synthetic scenario,Medication history not provided,"Lab report not provided; clinician verification needed","Breakfast: oats; lunch: rice and vegetables; dinner: beans and yam",Not reported,Requests affordable locally available foods
+DEMO102,Sam Taylor,52,Adult,168 cm,74 kg,Previously documented hypertension in this fictional scenario,Current medications not listed,"Lab report not included; clinician verification needed","Prefers rice and vegetables; avoids very spicy foods",Not reported,Needs affordable meal options
+DEMO103,Jordan Lee,39,Adult,174 cm,82 kg,Medical history not available in synthetic record,Medication history not available,No laboratory report,"Frequently skips breakfast; enjoys beans and fish",Unknown,Flexible
